@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Eventos{% endblock %}
+
+{% block content %}
+<div class="section container-ag">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <h1 class="font-display" style="margin-bottom:0.25rem;">Mis Eventos</h1>
+      <p class="text-muted-ag">Gestiona todos tus eventos desde aquí</p>
+    </div>
+    <div style="display:flex; gap:0.75rem;">
+      <a href="{% url 'tickets:dashboard' %}" class="btn-ghost" style="padding:10px 20px;">
+        📊 Dashboard
+      </a>
+      <a href="{% url 'events:create' %}" class="btn-gold" style="padding:10px 24px;">
+        + Crear Evento
+      </a>
+    </div>
+  </div>
+
+  {% if eventos %}
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      {% for evento in eventos %}
+        <div class="glass" style="padding:1.5rem; display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;">
+
+          {% if evento.imagen_banner %}
+            <img src="{{ evento.imagen_banner.url }}" alt="{{ evento.titulo }}"
+                 style="width:100px; height:70px; object-fit:cover; border-radius:10px; flex-shrink:0;">
+          {% else %}
+            <div style="width:100px; height:70px; background:rgba(139,92,246,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <span style="font-size:1.75rem; opacity:0.4;">✦</span>
+            </div>
+          {% endif %}
+
+          <div style="flex:1; min-width:200px;">
+            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.25rem;">
+              <h3 style="font-size:1rem; font-weight:600;">{{ evento.titulo }}</h3>
+              <span class="badge-status badge-{{ evento.estado|lower }}">{{ evento.get_estado_display }}</span>
+            </div>
+            <p class="text-muted-ag" style="font-size:0.8rem;">
+              📅 {{ evento.fecha_inicio|date:"d/m/Y H:i" }} &nbsp;·&nbsp;
+              📍 {{ evento.ubicacion.nombre }}, {{ evento.ubicacion.ciudad }}
+            </p>
+            <p class="text-muted-ag" style="font-size:0.8rem; margin-top:2px;">
+              🎟 {{ evento.entradas_vendidas }} entradas vendidas
+              &nbsp;·&nbsp; 💰 ${{ evento.ingresos_totales|floatformat:0 }} COP
+            </p>
+          </div>
+
+          <div style="display:flex; gap:0.5rem; flex-shrink:0; flex-wrap:wrap;">
+            <a href="{% url 'events:detail' evento.pk %}" class="btn-ghost" style="padding:7px 14px; font-size:0.8rem;">
+              Ver
+            </a>
+            <a href="{% url 'events:update' evento.pk %}" class="btn-primary-ag" style="padding:7px 14px; font-size:0.8rem;">
+              Editar
+            </a>
+            <a href="{% url 'tickets:export_excel' evento.pk %}" class="btn-ghost" style="padding:7px 14px; font-size:0.8rem;">
+              📥 Excel
+            </a>
+            <form method="post" action="{% url 'events:delete' evento.pk %}"
+                  onsubmit="return confirm('¿Eliminar el evento «{{ evento.titulo }}»? Esta acción no se puede deshacer.')">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger-ag" style="padding:7px 14px; font-size:0.8rem;">
+                Eliminar
+              </button>
+            </form>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align:center; padding:5rem 0;">
+      <div class="glass" style="display:inline-block; padding:3rem 4rem;">
+        <p style="font-size:3rem; margin-bottom:1rem;">🎭</p>
+        <h3 class="font-display">Sin eventos aún</h3>
+        <p class="text-muted-ag" style="margin-top:0.75rem;">Crea tu primer evento y empieza a vender entradas.</p>
+        <a href="{% url 'events:create' %}" class="btn-gold" style="margin-top:1.5rem;">
+          + Crear Evento
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="section container-ag" style="max-width:860px;">
+  <div style="margin-bottom:2rem;">
+    <a href="{% url 'events:manage' %}" class="text-muted-ag" style="font-size:0.875rem; text-decoration:none;">
+      ← Volver a Mis Eventos
+    </a>
+    <h1 class="font-display" style="margin-top:0.75rem;">{{ title }}</h1>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Información del Evento -->
+    <div class="glass" style="padding:2rem; margin-bottom:1.5rem;">
+      <h3 class="font-display" style="font-size:1rem; margin-bottom:1.5rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+        Información del Evento
+      </h3>
+
+      <div class="form-group">
+        <label class="form-label">Título del Evento *</label>
+        <input type="text" name="titulo" class="form-control {% if form.titulo.errors %}is-invalid{% endif %}"
+          value="{{ form.titulo.value|default:'' }}" placeholder="Nombre memorable para tu evento">
+        {% for e in form.titulo.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descripción *</label>
+        <textarea name="descripcion" class="form-control {% if form.descripcion.errors %}is-invalid{% endif %}"
+          rows="5" placeholder="Describe el evento, artistas, agenda…">{{ form.descripcion.value|default:'' }}</textarea>
+        {% for e in form.descripcion.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Fecha y Hora de Inicio *</label>
+          <input type="datetime-local" name="fecha_inicio" class="form-control {% if form.fecha_inicio.errors %}is-invalid{% endif %}"
+            value="{{ form.fecha_inicio.value|default:'' }}">
+          {% for e in form.fecha_inicio.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha y Hora de Fin *</label>
+          <input type="datetime-local" name="fecha_fin" class="form-control {% if form.fecha_fin.errors %}is-invalid{% endif %}"
+            value="{{ form.fecha_fin.value|default:'' }}">
+          {% for e in form.fecha_fin.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select name="estado" class="form-control">
+            {% for val, label in form.estado.field.choices %}
+              <option value="{{ val }}" {% if form.estado.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ubicación *</label>
+          <select name="ubicacion" class="form-control {% if form.ubicacion.errors %}is-invalid{% endif %}">
+            <option value="">— Selecciona una ubicación —</option>
+            {% for pk, nombre in form.ubicacion.field.choices %}
+              {% if pk %}<option value="{{ pk }}" {% if form.ubicacion.value|stringformat:"s" == pk|stringformat:"s" %}selected{% endif %}>{{ nombre }}</option>{% endif %}
+            {% endfor %}
+          </select>
+          {% for e in form.ubicacion.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Banner del Evento (imagen)</label>
+        {% if form.instance.imagen_banner %}
+          <div style="margin-bottom:0.75rem;">
+            <img src="{{ form.instance.imagen_banner.url }}" style="height:80px; border-radius:8px; object-fit:cover;">
+          </div>
+        {% endif %}
+        <input type="file" name="imagen_banner" accept="image/*"
+               class="form-control" style="padding:8px;">
+        <p class="text-muted-ag" style="font-size:0.75rem; margin-top:4px;">Recomendado: 1200×600px</p>
+      </div>
+    </div>
+
+    <!-- Categorías de Precios -->
+    <div class="glass" style="padding:2rem; margin-bottom:1.5rem;">
+      <h3 class="font-display" style="font-size:1rem; margin-bottom:1.5rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+        Categorías de Entradas
+      </h3>
+
+      {{ formset.management_form }}
+      <div id="formset-container">
+        {% for categoria_form in formset %}
+          <div class="formset-row" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0.75rem; align-items:end; margin-bottom:0.75rem;">
+            {{ categoria_form.id }}
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Nombre</label>
+              <input type="text" name="{{ categoria_form.nombre.html_name }}" class="form-control"
+                value="{{ categoria_form.nombre.value|default:'' }}" placeholder="Ej. General, VIP">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Precio (COP)</label>
+              <input type="number" name="{{ categoria_form.precio.html_name }}" class="form-control"
+                value="{{ categoria_form.precio.value|default:'' }}" placeholder="0" min="0" step="1000">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Cantidad</label>
+              <input type="number" name="{{ categoria_form.cantidad_disponible.html_name }}" class="form-control"
+                value="{{ categoria_form.cantidad_disponible.value|default:'' }}" placeholder="100" min="1">
+            </div>
+            <div style="margin-bottom:0; padding-bottom:1px;">
+              <label class="form-label" style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                {{ categoria_form.DELETE }}
+                <span style="font-size:0.75rem;">Eliminar</span>
+              </label>
+            </div>
+          </div>
+          {% if categoria_form.errors %}
+            {% for field, errors in categoria_form.errors.items %}
+              {% for e in errors %}
+                <p class="error-feedback">✕ {{ e }}</p>
+              {% endfor %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+      <a href="{% url 'events:manage' %}" class="btn-ghost">Cancelar</a>
+      <button type="submit" class="btn-gold" style="padding:12px 32px; font-size:1rem;">
+        {% if evento %}Guardar cambios{% else %}Crear Evento{% endif %}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Validación de Entrada{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+  <div style="width:100%; max-width:480px; text-align:center;">
+
+    {% if status == 'success' %}
+      <div class="validate-result validate-success animate-in" style="animation:pulse-glow 2s ease infinite;">
+        <div class="validate-icon">✅</div>
+        <h2 class="font-display" style="color:var(--success); margin-bottom:0.75rem;">¡Acceso Permitido!</h2>
+        <p style="color:#6ee7b7; font-size:1.1rem;">{{ mensaje }}</p>
+        <hr class="divider" style="margin:1.5rem 0;">
+        <div style="text-align:left; display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="display:flex; justify-content:space-between;">
+            <span class="text-muted-ag" style="font-size:0.85rem;">Asistente</span>
+            <span style="font-weight:600;">{{ entrada.asistente.get_full_name|default:entrada.asistente.username }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span class="text-muted-ag" style="font-size:0.85rem;">Evento</span>
+            <span style="font-weight:600;">{{ entrada.evento.titulo }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span class="text-muted-ag" style="font-size:0.85rem;">Categoría</span>
+            <span>{{ entrada.categoria.nombre }}</span>
+          </div>
+        </div>
+      </div>
+
+    {% elif status == 'ya_usado' %}
+      <div class="validate-result validate-warning animate-in">
+        <div class="validate-icon">⚠️</div>
+        <h2 class="font-display" style="color:var(--warning); margin-bottom:0.75rem;">Acceso Denegado</h2>
+        <p style="color:#fde68a; font-size:1rem;">{{ mensaje }}</p>
+        <hr class="divider" style="margin:1.5rem 0;">
+        <div style="text-align:left; display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="display:flex; justify-content:space-between;">
+            <span class="text-muted-ag" style="font-size:0.85rem;">Asistente</span>
+            <span style="font-weight:600;">{{ entrada.asistente.get_full_name|default:entrada.asistente.username }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span class="text-muted-ag" style="font-size:0.85rem;">Evento</span>
+            <span style="font-weight:600;">{{ entrada.evento.titulo }}</span>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <div class="validate-result validate-error animate-in">
+        <div class="validate-icon">❌</div>
+        <h2 class="font-display" style="color:var(--danger); margin-bottom:0.75rem;">Entrada Inválida</h2>
+        <p style="color:#fca5a5; font-size:1rem;">{{ mensaje }}</p>
+      </div>
+    {% endif %}
+
+    <div style="margin-top:2rem; display:flex; gap:0.75rem; justify-content:center;">
+      {% if user.is_authenticated and user.is_operador or user.is_organizador %}
+        <a href="{% url 'tickets:checkin' %}" class="btn-primary-ag">← Volver al Check-In</a>
+      {% endif %}
+      <a href="{% url 'home' %}" class="btn-ghost">Inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

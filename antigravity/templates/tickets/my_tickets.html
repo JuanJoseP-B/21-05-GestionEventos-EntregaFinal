@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Entradas{% endblock %}
+
+{% block content %}
+<div class="section container-ag">
+
+  <div style="margin-bottom:2rem;">
+    <h1 class="font-display">Mis Entradas</h1>
+    <p class="text-muted-ag">Tus accesos digitales a experiencias únicas</p>
+  </div>
+
+  {% if entradas %}
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+      {% for entrada in entradas %}
+        <a href="{% url 'tickets:detail' entrada.codigo_unico %}" style="text-decoration:none; color:inherit;">
+          <div class="ticket-card" style="display:flex; overflow:hidden;">
+            <div class="ticket-strip"></div>
+            <div style="flex:1; display:flex; gap:1.5rem; align-items:center; padding:1.25rem 1.5rem; flex-wrap:wrap;">
+
+              <!-- QR Thumbnail -->
+              {% if entrada.codigo_qr %}
+                <img src="{{ entrada.codigo_qr.url }}" alt="QR" class="qr-img"
+                     style="width:72px; height:72px; object-fit:contain; flex-shrink:0;">
+              {% else %}
+                <div style="width:72px; height:72px; background:rgba(255,255,255,0.05); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  <span style="font-size:1.75rem; opacity:0.3;">QR</span>
+                </div>
+              {% endif %}
+
+              <!-- Info -->
+              <div style="flex:1; min-width:180px;">
+                <h3 style="font-weight:600; font-size:1rem; margin-bottom:2px;">{{ entrada.evento.titulo }}</h3>
+                <p class="text-muted-ag" style="font-size:0.8rem;">
+                  📅 {{ entrada.evento.fecha_inicio|date:"d M Y" }} &nbsp;·&nbsp;
+                  📍 {{ entrada.evento.ubicacion.ciudad }} &nbsp;·&nbsp;
+                  🏷 {{ entrada.categoria.nombre }}
+                </p>
+                <p class="text-muted-ag" style="font-size:0.75rem; margin-top:4px;">
+                  Comprada: {{ entrada.fecha_compra|date:"d/m/Y" }}
+                </p>
+              </div>
+
+              <!-- Estado -->
+              <div style="text-align:right; flex-shrink:0;">
+                {% if entrada.usado %}
+                  <span class="badge-status badge-finalizado">✓ Usada</span>
+                {% else %}
+                  <span class="badge-status badge-publicado">● Activa</span>
+                {% endif %}
+                <p class="text-muted-ag" style="font-size:0.75rem; margin-top:6px;">
+                  ${{ entrada.categoria.precio|floatformat:0 }} COP
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div style="text-align:center; padding:5rem 0;">
+      <div class="glass" style="display:inline-block; padding:3rem 4rem;">
+        <p style="font-size:3rem; margin-bottom:1rem;">🎟️</p>
+        <h3 class="font-display">Sin entradas aún</h3>
+        <p class="text-muted-ag" style="margin-top:0.75rem;">Explora los eventos disponibles y compra tu primera entrada.</p>
+        <a href="{% url 'events:list' %}" class="btn-gold" style="margin-top:1.5rem;">
+          Explorar Eventos
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

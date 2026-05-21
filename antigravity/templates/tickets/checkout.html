@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Comprar Entrada — {{ categoria.evento.titulo }}{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+  <div style="width:100%; max-width:560px;">
+
+    <div style="margin-bottom:1.5rem; text-align:center;">
+      <p class="text-muted-ag" style="font-size:0.875rem; margin-bottom:0.5rem;">Comprar entrada para</p>
+      <h1 class="font-display" style="font-size:1.75rem;">{{ categoria.evento.titulo }}</h1>
+      <div style="margin-top:0.75rem; display:flex; justify-content:center; gap:1rem; font-size:0.85rem; color:var(--text-muted);">
+        <span>📅 {{ categoria.evento.fecha_inicio|date:"d M Y" }}</span>
+        <span>·</span>
+        <span>🏷 Categoría: <strong style="color:var(--text-primary);">{{ categoria.nombre }}</strong></span>
+        <span>·</span>
+        <span class="text-gold" style="font-weight:700;">${{ categoria.precio|floatformat:0 }} COP</span>
+      </div>
+    </div>
+
+    <div class="glass animate-in" style="padding:2rem;">
+      <div style="margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;">
+        <div style="width:40px; height:40px; background:rgba(139,92,246,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+          💳
+        </div>
+        <div>
+          <p style="font-weight:600; font-size:0.9rem;">Pago Seguro Simulado</p>
+          <p class="text-muted-ag" style="font-size:0.75rem;">Usa cualquier número ficticio. Termina en 9999 = rechazo.</p>
+        </div>
+      </div>
+
+      <form method="post" id="checkout-form" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">Cantidad de entradas</label>
+          <input type="number" name="cantidad" class="form-control {% if form.cantidad.errors %}is-invalid{% endif %}"
+            value="{{ form.cantidad.value|default:'1' }}" min="1" max="{{ categoria.disponibles }}"
+            id="id_cantidad">
+          <p class="text-muted-ag" style="font-size:0.75rem; margin-top:4px;">
+            Disponibles: {{ categoria.disponibles }}
+          </p>
+          {% for e in form.cantidad.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre en la tarjeta</label>
+          <input type="text" name="nombre_titular" class="form-control {% if form.nombre_titular.errors %}is-invalid{% endif %}"
+            value="{{ form.nombre_titular.value|default:'' }}" placeholder="JUAN PEREZ" style="text-transform:uppercase;"
+            autocomplete="cc-name">
+          {% for e in form.nombre_titular.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Número de tarjeta</label>
+          <input type="text" name="numero_tarjeta" id="card-number"
+            class="form-control {% if form.numero_tarjeta.errors %}is-invalid{% endif %}"
+            placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric" autocomplete="cc-number"
+            value="{{ form.numero_tarjeta.value|default:'' }}">
+          {% for e in form.numero_tarjeta.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Expiración</label>
+            <input type="text" name="expiracion" class="form-control {% if form.expiracion.errors %}is-invalid{% endif %}"
+              placeholder="MM/AA" maxlength="5" autocomplete="cc-exp"
+              value="{{ form.expiracion.value|default:'' }}">
+            {% for e in form.expiracion.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">CVV</label>
+            <input type="text" name="cvv" class="form-control {% if form.cvv.errors %}is-invalid{% endif %}"
+              placeholder="123" maxlength="4" inputmode="numeric" autocomplete="cc-csc"
+              value="{{ form.cvv.value|default:'' }}">
+            {% for e in form.cvv.errors %}<p class="error-feedback">✕ {{ e }}</p>{% endfor %}
+          </div>
+        </div>
+
+        <!-- Total dinámico -->
+        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:var(--radius-sm); padding:1rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+          <span class="text-muted-ag" style="font-size:0.875rem;">Total a pagar</span>
+          <span class="text-gold" style="font-size:1.25rem; font-weight:700;" id="total-display">
+            ${{ categoria.precio|floatformat:0 }} COP
+          </span>
+        </div>
+
+        <button type="submit" class="btn-gold" style="width:100%; justify-content:center; padding:14px; font-size:1rem;"
+                id="submit-btn">
+          🔒 Confirmar Pago
+        </button>
+      </form>
+
+      <p style="text-align:center; margin-top:1rem; font-size:0.75rem; color:var(--text-muted);">
+        Al confirmar aceptas recibir tu entrada digitalmente por correo y en la plataforma.
+      </p>
+    </div>
+
+    <div style="text-align:center; margin-top:1rem;">
+      <a href="{% url 'events:detail' categoria.evento.pk %}" class="text-muted-ag"
+         style="font-size:0.875rem; text-decoration:none;">← Volver al evento</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const precio = {{ categoria.precio }};
+  const cantInput = document.getElementById('id_cantidad');
+  const totalEl = document.getElementById('total-display');
+  const submitBtn = document.getElementById('submit-btn');
+
+  function updateTotal() {
+    const qty = parseInt(cantInput.value) || 1;
+    const total = qty * precio;
+    totalEl.textContent = '$' + total.toLocaleString('es-CO') + ' COP';
+  }
+  cantInput.addEventListener('input', updateTotal);
+
+  // Formatear número de tarjeta con espacios
+  document.getElementById('card-number').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 16);
+    e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+  });
+
+  // Formatear expiración
+  document.querySelector('[name="expiracion"]').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+    e.target.value = v;
+  });
+
+  // Deshabilitar botón al enviar para evitar doble click
+  document.getElementById('checkout-form').addEventListener('submit', function() {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Procesando…';
+  });
+</script>
+{% endblock %}

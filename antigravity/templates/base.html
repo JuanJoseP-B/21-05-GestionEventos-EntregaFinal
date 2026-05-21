@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Antigravity{% endblock %} · Eventos Premium</title>
+  <meta name="description" content="{% block description %}Plataforma de gestión y compra de entradas para eventos premium.{% endblock %}">
+  <link rel="stylesheet" href="{% static 'css/antigravity.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+<nav class="navbar" aria-label="Navegación principal">
+  <div class="container-ag" style="display:flex; align-items:center; justify-content:space-between; height:60px;">
+    <a href="{% url 'home' %}" class="navbar-brand">✦ Antigravity</a>
+
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <a href="{% url 'events:list' %}" class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.app_name == 'events' %}active{% endif %}">Eventos</a>
+
+      {% if user.is_authenticated %}
+        {% if user.is_organizador %}
+          <a href="{% url 'events:manage' %}" class="nav-link">Mis Eventos</a>
+          <a href="{% url 'tickets:dashboard' %}" class="nav-link">Dashboard</a>
+        {% endif %}
+        {% if user.is_asistente %}
+          <a href="{% url 'tickets:my_tickets' %}" class="nav-link">Mis Entradas</a>
+        {% endif %}
+        {% if user.is_operador %}
+          <a href="{% url 'tickets:checkin' %}" class="nav-link">Check-In</a>
+        {% endif %}
+        <a href="{% url 'users:profile' %}" class="nav-link">Perfil</a>
+        <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-ghost" style="padding:6px 14px; font-size:0.875rem;">
+            Salir
+          </button>
+        </form>
+      {% else %}
+        <a href="{% url 'users:login' %}" class="btn-ghost" style="padding:6px 14px; font-size:0.875rem;">Iniciar Sesión</a>
+        <a href="{% url 'users:register' %}" class="btn-primary-ag" style="padding:6px 18px; font-size:0.875rem;">Registrarse</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- ── Messages ───────────────────────────────────────────────────────── -->
+{% if messages %}
+<div class="container-ag" style="padding-top:1rem;">
+  {% for message in messages %}
+    <div class="alert-ag
+      {% if message.tags == 'success' %}alert-success-ag
+      {% elif message.tags == 'error' %}alert-error-ag
+      {% elif message.tags == 'warning' %}alert-warning-ag
+      {% else %}alert-info-ag{% endif %}">
+      <span>
+        {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}✕{% elif message.tags == 'warning' %}⚠{% else %}ℹ{% endif %}
+      </span>
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Contenido ──────────────────────────────────────────────────────── -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<footer style="border-top:1px solid var(--glass-border); padding:2.5rem 0; margin-top:5rem; text-align:center;">
+  <div class="container-ag">
+    <p class="font-display" style="font-size:1.2rem; margin-bottom:0.5rem;">✦ Antigravity</p>
+    <p class="text-muted-ag" style="font-size:0.8rem;">Sistema de Gestión de Eventos © {% now "Y" %}</p>
+  </div>
+</footer>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

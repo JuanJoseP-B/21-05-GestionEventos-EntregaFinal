@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Check-In · Antigravity{% endblock %}
+
+{% block content %}
+<div class="section container-ag" style="max-width:700px;">
+
+  <div style="margin-bottom:2rem; text-align:center;">
+    <h1 class="font-display">Panel de Check-In</h1>
+    <p class="text-muted-ag">Ingresa o escanea el código UUID de la entrada</p>
+  </div>
+
+  <!-- Input manual -->
+  <div class="glass" style="padding:2rem; margin-bottom:2rem;">
+    <label class="form-label">Código de Entrada (UUID)</label>
+    <div style="display:flex; gap:0.75rem;">
+      <input type="text" id="uuid-input" class="form-control scanner-input"
+             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"
+             style="flex:1;" autofocus>
+      <button onclick="validateEntry()" class="btn-primary-ag" id="validate-btn">
+        Validar
+      </button>
+    </div>
+    <p class="text-muted-ag" style="font-size:0.75rem; margin-top:0.5rem;">
+      💡 Si usas un lector de QR, el código se completará automáticamente al escanear.
+    </p>
+  </div>
+
+  <!-- Resultado AJAX -->
+  <div id="result-area" class="checkin-result" style="display:none; min-height:auto;">
+    <div id="result-content" style="width:100%;"></div>
+  </div>
+
+  <!-- Historial de validaciones recientes -->
+  <div class="glass" style="padding:1.5rem; margin-top:2rem;">
+    <h3 class="font-display" style="font-size:0.9rem; margin-bottom:1rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+      Historial de esta sesión
+    </h3>
+    <div id="history-list" style="display:flex; flex-direction:column; gap:0.5rem; min-height:40px;">
+      <p class="text-muted-ag" style="font-size:0.8rem;" id="history-empty">No hay validaciones aún.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const csrfToken = '{{ csrf_token }}';
+  const history = [];
+
+  async function validateEntry() {
+    const input = document.getElementById('uuid-input');
+    const codigo = input.value.trim();
+    const btn = document.getElementById('validate-btn');
+    const resultArea = document.getElementById('result-area');
+    const resultContent = document.getElementById('result-content');
+
+    if (!codigo) { input.focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    resultArea.style.display = 'block';
+    resultContent.innerHTML = '<p class="text-muted-ag" style="text-align:center;">Validando…</p>';
+
+    try {
+      const res = await fetch('{% url "tickets:api_validar" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ codigo }),
+      });
+      const data = await res.json();
+      renderResult(data);
+      addToHistory(codigo, data);
+    } catch (err) {
+      resultContent.innerHTML = `<div class="validate-result validate-error">
+        <div class="validate-icon">❌</div>
+        <p style="color:var(--danger);">Error de conexión. Intenta de nuevo.</p>
+      </div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Validar';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  function renderResult(data) {
+    const content = document.getElementById('result-content');
+    const configs = {
+      success:    { cls: 'validate-success', icon: '✅', titleColor: 'var(--success)', msgColor: '#6ee7b7' },
+      ya_usado:   { cls: 'validate-warning', icon: '⚠️', titleColor: 'var(--warning)', msgColor: '#fde68a' },
+      not_found:  { cls: 'validate-error',   icon: '❓', titleColor: 'var(--danger)',  msgColor: '#fca5a5' },
+      error:      { cls: 'validate-error',   icon: '❌', titleColor: 'var(--danger)',  msgColor: '#fca5a5' },
+    };
+    const cfg = configs[data.status] || configs.error;
+    const detalles = data.asistente ? `
+      <hr class="divider" style="margin:1rem 0;">
+      <div style="text-align:left; display:flex; flex-direction:column; gap:0.4rem;">
+        <div style="display:flex; justify-content:space-between;">
+          <span class="text-muted-ag" style="font-size:0.8rem;">Asistente</span>
+          <span style="font-weight:600; font-size:0.875rem;">${data.asistente}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span class="text-muted-ag" style="font-size:0.8rem;">Evento</span>
+          <span style="font-size:0.875rem;">${data.evento}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span class="text-muted-ag" style="font-size:0.8rem;">Categoría</span>
+          <span style="font-size:0.875rem;">${data.categoria}</span>
+        </div>
+      </div>` : '';
+
+    content.innerHTML = `
+      <div class="validate-result ${cfg.cls} animate-in">
+        <div class="validate-icon">${cfg.icon}</div>
+        <h3 class="font-display" style="color:${cfg.titleColor}; margin-bottom:0.5rem;">${data.mensaje}</h3>
+        ${detalles}
+      </div>`;
+  }
+
+  function addToHistory(codigo, data) {
+    const icons = { success: '✅', ya_usado: '⚠️', not_found: '❓', error: '❌' };
+    history.unshift({ codigo: codigo.slice(0,8) + '…', mensaje: data.mensaje, icon: icons[data.status] || '❌', time: new Date().toLocaleTimeString('es-CO') });
+
+    const list = document.getElementById('history-list');
+    const empty = document.getElementById('history-empty');
+    if (empty) empty.remove();
+
+    list.innerHTML = history.slice(0, 10).map(h => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0.75rem; background:rgba(255,255,255,0.03); border-radius:8px; font-size:0.8rem;">
+        <span>${h.icon} <span style="font-family:monospace; color:var(--text-muted);">${h.codigo}</span></span>
+        <span class="text-muted-ag">${h.time}</span>
+      </div>`).join('');
+  }
+
+  // Enter key para validar
+  document.getElementById('uuid-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') validateEntry();
+  });
+</script>
+{% endblock %}

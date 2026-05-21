@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Eventos{% endblock %}
+
+{% block content %}
+<div class="section container-ag">
+
+  <!-- Header + Búsqueda -->
+  <div style="margin-bottom:2.5rem;">
+    <h1 class="font-display animate-in" style="margin-bottom:0.5rem;">Explorar Eventos</h1>
+    <p class="text-muted-ag animate-in">Encuentra tu próxima experiencia</p>
+
+    <form method="get" style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar eventos…"
+        style="flex:1; min-width:200px; max-width:400px;">
+      <select name="ciudad" class="form-control" style="min-width:160px; max-width:200px;">
+        <option value="">Todas las ciudades</option>
+        {% for ciudad in ciudades %}
+          <option value="{{ ciudad }}" {% if ciudad == ciudad_sel %}selected{% endif %}>{{ ciudad }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-primary-ag">Buscar</button>
+      {% if q or ciudad_sel %}
+        <a href="{% url 'events:list' %}" class="btn-ghost">Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Grid -->
+  {% if eventos %}
+    <div class="events-grid">
+      {% for evento in eventos %}
+        <a href="{% url 'events:detail' evento.pk %}" class="event-card">
+          {% if evento.imagen_banner %}
+            <img src="{{ evento.imagen_banner.url }}" alt="{{ evento.titulo }}" loading="lazy">
+          {% else %}
+            <div style="height:200px; background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(245,158,11,0.08)); display:flex; align-items:center; justify-content:center;">
+              <span style="font-size:3.5rem; opacity:0.3;">✦</span>
+            </div>
+          {% endif %}
+          <div class="event-card-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <span class="event-badge">📍 {{ evento.ubicacion.ciudad }}</span>
+              {% if evento.categorias.all %}
+                <span class="text-gold" style="font-size:0.8rem; font-weight:700;">
+                  Desde ${{ evento.categorias.first.precio|floatformat:0 }}
+                </span>
+              {% endif %}
+            </div>
+            <p class="event-card-title">{{ evento.titulo }}</p>
+            <p class="text-muted-ag" style="font-size:0.8rem; margin-bottom:1rem; flex:1;">
+              {{ evento.descripcion|truncatechars:100 }}
+            </p>
+            <div style="border-top:1px solid var(--glass-border); padding-top:0.75rem; display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted);">
+              <span>📅 {{ evento.fecha_inicio|date:"d M Y, H:i" }}</span>
+              <span>📍 {{ evento.ubicacion.nombre }}</span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+      <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:3rem; flex-wrap:wrap;">
+        {% if page_obj.has_previous %}
+          <a href="?{% if q %}q={{ q }}&{% endif %}{% if ciudad_sel %}ciudad={{ ciudad_sel }}&{% endif %}page={{ page_obj.previous_page_number }}"
+             class="btn-ghost" style="padding:8px 18px;">← Anterior</a>
+        {% endif %}
+        <span class="glass-sm" style="padding:8px 18px; font-size:0.875rem; color:var(--text-muted);">
+          Página {{ page_obj.number }} de {{ paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+          <a href="?{% if q %}q={{ q }}&{% endif %}{% if ciudad_sel %}ciudad={{ ciudad_sel }}&{% endif %}page={{ page_obj.next_page_number }}"
+             class="btn-ghost" style="padding:8px 18px;">Siguiente →</a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div style="text-align:center; padding:5rem 0;">
+      <div class="glass" style="display:inline-block; padding:3rem 4rem;">
+        <p style="font-size:3rem; margin-bottom:1rem;">🔍</p>
+        <h3 class="font-display">Sin resultados</h3>
+        <p class="text-muted-ag" style="margin-top:0.75rem;">
+          No se encontraron eventos{% if q %} para "{{ q }}"{% endif %}{% if ciudad_sel %} en {{ ciudad_sel }}{% endif %}.
+        </p>
+        <a href="{% url 'events:list' %}" class="btn-ghost" style="margin-top:1.5rem;">Ver todos los eventos</a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
