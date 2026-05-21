@@ -1,242 +1,293 @@
 # División de Trabajo — Antigravity · GitFlow 50/50
 
 > **Proyecto:** Sistema de Gestión de Eventos y Entradas  
-> **Metodología:** GitFlow con merge `--no-ff` para mantener historial paralelo limpio  
-> **Ramas:** `main` → `develop` → `sebastian` / `juan`
+> **Ramas:** `main` → `develop` → `sebastian` / `juan`  
+> **Regla de oro:** `git merge --no-ff` siempre · nunca push directo a `main`
 
 ---
 
-## Estructura de ramas
+## Leyenda
 
 ```
-main
- └── develop
-      ├── sebastian   ← Computador 1
-      └── juan        ← Computador 2
+[S] = SEBASTIAN  (Computador 1)
+[J] = JUAN       (Computador 2)
+[*] = Compartido (lo crea Sebastian, Juan hace pull)
 ```
-
-### Reglas obligatorias
-- **Nunca** hacer push directo a `main` ni a `develop`
-- Cada merge a `develop` usa `git merge --no-ff`
-- Un commit por tarea/archivo significativo (no commits tipo "fix" sin contexto)
-- Pull de `develop` antes de empezar cada sesión de trabajo
 
 ---
 
-## SEBASTIAN — Computador 1
+## Árbol completo del proyecto
 
-### Responsabilidad general
-> Configuración del proyecto · Autenticación y usuarios · Modelos de datos (events) · UI base y Dashboard
-
-### Archivos propios
-
-#### Configuración del proyecto
-| Archivo | Descripción |
-|---------|-------------|
-| `manage.py` | Entry point de Django |
-| `requirements.txt` | Dependencias del proyecto |
-| `.env.example` | Plantilla de variables de entorno |
-| `.gitignore` | Exclusiones de Git |
-| `SETUP.md` | Guía de instalación |
-| `antigravity/__init__.py` | Paquete principal |
-| `antigravity/settings.py` | Configuración Django (DB, apps, media, email) |
-| `antigravity/urls.py` | URLs raíz del proyecto |
-| `antigravity/wsgi.py` | Interfaz WSGI para producción |
-
-#### App `users/` — Autenticación y Roles
-| Archivo | Descripción |
-|---------|-------------|
-| `users/__init__.py` | Paquete |
-| `users/apps.py` | Configuración de la app |
-| `users/models.py` | `CustomUser` con roles: ORGANIZADOR, ASISTENTE, OPERADOR |
-| `users/admin.py` | Panel admin personalizado para usuarios |
-| `users/forms.py` | `LoginForm`, `RegisterForm`, `ProfileUpdateForm` |
-| `users/views.py` | Vistas: login, logout, register, profile |
-| `users/urls.py` | Rutas `/users/` |
-| `users/migrations/` | Migraciones del modelo CustomUser |
-
-#### App `events/` — Modelos y datos
-| Archivo | Descripción |
-|---------|-------------|
-| `events/__init__.py` | Paquete |
-| `events/apps.py` | Configuración de la app |
-| `events/models.py` | Modelos: `Ubicacion`, `Evento`, `PrecioCategoria` |
-| `events/admin.py` | Admin con inline de categorías |
-| `events/forms.py` | `UbicacionForm`, `EventoForm`, `PrecioCategoriaFormSet` |
-| `events/migrations/` | Migraciones de los 3 modelos |
-
-#### Frontend — Base y Dashboard
-| Archivo | Descripción |
-|---------|-------------|
-| `static/css/antigravity.css` | Sistema de diseño completo (glassmorphism, variables, componentes) |
-| `templates/base.html` | Layout base con navbar, messages, footer |
-| `templates/home.html` | Landing page con hero y eventos destacados |
-| `templates/users/login.html` | Formulario de inicio de sesión glassmorphism |
-| `templates/users/register.html` | Registro con selector visual de rol |
-| `templates/users/profile.html` | Perfil + cambio de contraseña |
-| `templates/dashboard/index.html` | Dashboard analítico con Chart.js (barras + línea) |
-
-### Commits esperados (mínimo 7)
-
-```bash
-git commit -m "feat(config): inicializar proyecto Django con environ y whitenoise"
-git commit -m "feat(users): modelo CustomUser con roles Organizador, Asistente, Operador"
-git commit -m "feat(users): vistas y formularios de autenticación (login, register, profile)"
-git commit -m "feat(events): modelos Ubicacion, Evento y PrecioCategoria con FK encadenadas"
-git commit -m "feat(events): formularios EventoForm y PrecioCategoriaFormSet inline"
-git commit -m "feat(frontend): sistema de diseño glassmorphism en antigravity.css"
-git commit -m "feat(frontend): base.html, home.html y templates de autenticación"
-git commit -m "feat(dashboard): integración Chart.js con API de ventas y asistencia"
+```
+antigravity/                          [*] raíz del proyecto
+│
+├── manage.py                         [S] entry point Django
+├── requirements.txt                  [S] dependencias pip
+├── .env.example                      [S] plantilla de variables de entorno
+├── .gitignore                        [S] exclusiones de Git
+├── SETUP.md                          [S] guía de instalación
+├── DIVISION_TRABAJO.md               [*] este documento
+│
+├── antigravity/                      [S] paquete de configuración principal
+│   ├── __init__.py                   [S]
+│   ├── settings.py                   [S] base de datos, apps, media, email, whitenoise
+│   ├── urls.py                       [S] enrutador raíz del proyecto
+│   └── wsgi.py                       [S] interfaz producción
+│
+├── users/                            [S] app completa de autenticación
+│   ├── __init__.py                   [S]
+│   ├── apps.py                       [S] UsersConfig
+│   ├── models.py                     [S] CustomUser — roles ORGANIZADOR/ASISTENTE/OPERADOR
+│   ├── admin.py                      [S] panel admin con fieldsets personalizados
+│   ├── forms.py                      [S] LoginForm · RegisterForm · ProfileUpdateForm
+│   ├── views.py                      [S] login · logout · register · profile
+│   ├── urls.py                       [S] rutas /users/
+│   └── migrations/
+│       ├── __init__.py               [S]
+│       └── 0001_initial.py           [S] migración CustomUser
+│
+├── events/                           [S+J] app compartida — datos(S) + vistas(J)
+│   ├── __init__.py                   [S]
+│   ├── apps.py                       [S] EventsConfig
+│   ├── models.py                     [S] Ubicacion · Evento · PrecioCategoria
+│   ├── admin.py                      [S] inline de categorías en admin
+│   ├── forms.py                      [S] EventoForm · UbicacionForm · PrecioCategoriaFormSet
+│   ├── views.py                      [J] HomeView · EventListView · EventDetailView · CRUD
+│   ├── urls.py                       [J] rutas /events/ con namespace
+│   └── migrations/
+│       ├── __init__.py               [S]
+│       ├── 0001_initial.py           [S] Ubicacion · Evento · PrecioCategoria base
+│       └── 0002_initial.py           [S] foreign keys entre modelos
+│
+├── tickets/                          [J] app completa de entradas
+│   ├── __init__.py                   [J]
+│   ├── apps.py                       [J] TicketsConfig
+│   ├── models.py                     [J] Entrada — UUID · QR · pagado · usado · fecha_uso
+│   ├── admin.py                      [J] admin con filtros por evento y estado
+│   ├── forms.py                      [J] CheckoutForm · ValidarEntradaForm
+│   ├── views.py                      [J] Checkout · MyTickets · ValidarQR · CheckIn
+│   │                                     ApiValidar · DashboardView · ExportExcel
+│   ├── urls.py                       [J] /tickets/ — checkout · validar · checkin · dashboard · api
+│   └── migrations/
+│       ├── __init__.py               [J]
+│       ├── 0001_initial.py           [J] Entrada base (sin FK)
+│       └── 0002_initial.py           [J] asistente · categoria · evento FK
+│
+├── templates/
+│   ├── base.html                     [S] navbar · messages · footer · glassmorphism base
+│   ├── home.html                     [S] landing page con hero y eventos destacados
+│   │
+│   ├── users/                        [S] todas las vistas de autenticación
+│   │   ├── login.html                [S] formulario glass con manejo de errores
+│   │   ├── register.html             [S] registro con selector visual de rol (JS)
+│   │   └── profile.html              [S] perfil + cambio de contraseña
+│   │
+│   ├── events/                       [J] todas las vistas de eventos
+│   │   ├── list.html                 [J] catálogo con búsqueda · filtro ciudad · paginación
+│   │   ├── detail.html               [J] detalle con sidebar de compra por categoría
+│   │   ├── form.html                 [J] crear/editar evento con formset inline de precios
+│   │   └── manage.html               [J] panel del organizador con stats y acciones
+│   │
+│   ├── tickets/                      [J] todas las vistas de entradas
+│   │   ├── checkout.html             [J] tarjeta simulada · total dinámico · formato JS
+│   │   ├── my_tickets.html           [J] lista de entradas con QR thumbnail y estado
+│   │   ├── ticket_detail.html        [J] entrada individual · QR grande · descarga
+│   │   ├── validate.html             [J] resultado validación QR (OK / ya usada / error)
+│   │   └── checkin.html              [J] panel AJAX para operadores con historial sesión
+│   │
+│   └── dashboard/
+│       └── index.html                [S] sidebar · KPIs · Chart.js barras + línea · tabla
+│
+└── static/
+    └── css/
+        └── antigravity.css           [S] sistema de diseño completo:
+                                          variables · glass · navbar · botones
+                                          forms · cards · badges · alertas · animations
 ```
 
-### Comandos Git para Computador 1
+---
+
+## SEBASTIAN — Computador 1 · Rama `sebastian`
+
+### Módulos a cargo
+| Módulo | Qué hace |
+|--------|----------|
+| **Configuración** | Inicializa Django, environ, whitenoise, base de datos |
+| **`users/`** | CustomUser con 3 roles, login, register, perfil, admin |
+| **`events/` (datos)** | Modelos Ubicacion, Evento, PrecioCategoria + forms + admin |
+| **CSS global** | Sistema glassmorphism completo en `antigravity.css` |
+| **Templates base** | `base.html`, `home.html`, `users/` (3 templates) |
+| **Dashboard** | `dashboard/index.html` con Chart.js + API calls |
+
+### Commits mínimos esperados
 
 ```bash
-# 1. Clonar el nuevo repositorio
+git commit -m "feat(config): inicializar proyecto Django 5 con environ, whitenoise y SQLite"
+git commit -m "feat(users): CustomUser con roles Organizador, Asistente y Operador"
+git commit -m "feat(users): vistas login, logout, register y perfil con cambio de contraseña"
+git commit -m "feat(users): formularios de autenticación y actualización de perfil"
+git commit -m "feat(events): modelos Ubicacion, Evento y PrecioCategoria con ForeignKey"
+git commit -m "feat(events): admin con inline de categorías y formularios validados"
+git commit -m "feat(frontend): sistema de diseño glassmorphism completo en antigravity.css"
+git commit -m "feat(frontend): base.html con navbar por rol, messages y footer"
+git commit -m "feat(frontend): home.html landing page y templates de autenticación"
+git commit -m "feat(dashboard): index.html con Chart.js — gráfica barras y línea + KPIs"
+```
+
+### Flujo Git
+
+```bash
+# Configuración inicial (tú primero)
 git clone <URL-nuevo-repo>
 cd <nombre-repo>
-
-# 2. Crear rama develop en el repo (solo la primera vez, el primero que llegue)
 git checkout -b develop
 git push -u origin develop
-
-# 3. Crear tu rama personal desde develop
 git checkout -b sebastian
 git push -u origin sebastian
 
-# 4. Trabajar — ciclo de trabajo diario
-git pull origin develop          # Traer cambios del compañero
-git add <archivos-específicos>
+# Ciclo diario
+git pull origin develop              # integrar trabajo de Juan
+git add <mis-archivos>
 git commit -m "feat(...): descripción"
 git push origin sebastian
 
-# 5. Cuando termines una fase, mergear a develop
+# Al terminar una fase → merge a develop
 git checkout develop
 git pull origin develop
-git merge --no-ff sebastian -m "merge: sebastian → develop (Sprint 1: Auth)"
+git merge --no-ff sebastian -m "merge(sebastian → develop): Sprint 1 — Config y Auth"
 git push origin develop
-git checkout sebastian            # Volver a tu rama
+git checkout sebastian
 ```
 
 ---
 
-## JUAN — Computador 2
+## JUAN — Computador 2 · Rama `juan`
 
-### Responsabilidad general
-> Vistas de eventos · Sistema completo de entradas (compra, QR, validación) · Check-in AJAX · Exportación Excel · API de estadísticas
+### Módulos a cargo
+| Módulo | Qué hace |
+|--------|----------|
+| **`events/views.py`** | Todas las vistas: lista pública, detalle, CRUD organizador |
+| **`events/urls.py`** | Enrutamiento de eventos con namespace |
+| **`tickets/`** | App completa: Entrada, checkout, QR, validación, check-in AJAX |
+| **API JSON** | Endpoints de ventas por categoría y asistencia por día |
+| **Exportación** | Excel con pandas/openpyxl |
+| **Templates events** | `list`, `detail`, `form`, `manage` — 4 templates |
+| **Templates tickets** | `checkout`, `my_tickets`, `detail`, `validate`, `checkin` — 5 templates |
 
-### Archivos propios
-
-#### App `events/` — Vistas y rutas
-| Archivo | Descripción |
-|---------|-------------|
-| `events/views.py` | `HomeView`, `EventListView`, `EventDetailView`, CRUD views |
-| `events/urls.py` | Rutas `/events/` con namespace |
-
-#### App `tickets/` — Sistema completo de entradas
-| Archivo | Descripción |
-|---------|-------------|
-| `tickets/__init__.py` | Paquete |
-| `tickets/apps.py` | Configuración de la app |
-| `tickets/models.py` | Modelo `Entrada` con UUID, QR, campo `usado`, `fecha_uso` |
-| `tickets/admin.py` | Admin de entradas con filtros |
-| `tickets/forms.py` | `CheckoutForm` (pasarela simulada), `ValidarEntradaForm` |
-| `tickets/views.py` | Checkout, MyTickets, TicketDetail, ValidarQR, CheckIn AJAX, Dashboard API, ExportExcel |
-| `tickets/urls.py` | Rutas `/tickets/` con todos los endpoints |
-| `tickets/migrations/` | Migraciones del modelo Entrada |
-
-#### Frontend — Eventos y Tickets
-| Archivo | Descripción |
-|---------|-------------|
-| `templates/events/list.html` | Catálogo con búsqueda, filtro por ciudad y paginación |
-| `templates/events/detail.html` | Detalle del evento con sidebar de compra |
-| `templates/events/form.html` | Formulario crear/editar evento + formset de categorías |
-| `templates/events/manage.html` | Panel de gestión de eventos del organizador |
-| `templates/tickets/checkout.html` | Checkout con tarjeta simulada y total dinámico |
-| `templates/tickets/my_tickets.html` | Lista de entradas compradas con QR thumbnail |
-| `templates/tickets/ticket_detail.html` | Entrada individual con QR grande + descarga |
-| `templates/tickets/validate.html` | Resultado de validación QR (acceso permitido/denegado) |
-| `templates/tickets/checkin.html` | Panel check-in AJAX para Operadores con historial |
-
-### Commits esperados (mínimo 7)
+### Commits mínimos esperados
 
 ```bash
-git commit -m "feat(events): vistas CRUD de eventos con mixins de permisos por rol"
-git commit -m "feat(events): templates catálogo con búsqueda, filtros y paginación"
-git commit -m "feat(events): template formulario con formset inline de categorías"
-git commit -m "feat(tickets): modelo Entrada con UUID, QR generation y campo de uso"
-git commit -m "feat(tickets): flujo de checkout con pasarela simulada (9999=rechazo)"
-git commit -m "feat(tickets): template checkout con validación JS y total dinámico"
-git commit -m "feat(tickets): check-in AJAX en tiempo real con historial de sesión"
-git commit -m "feat(tickets): endpoint API JSON + exportación Excel con pandas"
-git commit -m "feat(tickets): templates mis-entradas, detalle QR y validación"
+git commit -m "feat(events): vistas HomeView, EventListView y EventDetailView con permisos"
+git commit -m "feat(events): CRUD organizador con OrganizerRequiredMixin"
+git commit -m "feat(events): URLs de events con namespace y rutas de gestión"
+git commit -m "feat(tickets): modelo Entrada con UUID, generación QR y campos de control"
+git commit -m "feat(tickets): CheckoutForm con validación de tarjeta simulada (9999=rechazo)"
+git commit -m "feat(tickets): flujo de checkout — stock, pago, QR y correo de confirmación"
+git commit -m "feat(tickets): ValidarQRView y ApiValidarView con lógica de acceso"
+git commit -m "feat(tickets): CheckInView — panel AJAX en tiempo real para operadores"
+git commit -m "feat(tickets): DashboardView con API JSON de ventas y asistencia por día"
+git commit -m "feat(tickets): ExportExcelView con pandas — reporte completo de asistentes"
+git commit -m "feat(frontend): templates events — list, detail, form y manage"
+git commit -m "feat(frontend): templates tickets — checkout, my_tickets y ticket_detail"
+git commit -m "feat(frontend): checkin.html AJAX con historial y validate.html de resultado"
 ```
 
-### Comandos Git para Computador 2
+### Flujo Git
 
 ```bash
-# 1. Clonar el nuevo repositorio
+# Configuración inicial (Sebastian ya creó develop)
 git clone <URL-nuevo-repo>
 cd <nombre-repo>
-
-# 2. Crear tu rama desde develop (develop ya existe, lo creó Sebastian)
 git checkout develop
 git pull origin develop
 git checkout -b juan
 git push -u origin juan
 
-# 3. Trabajar — ciclo de trabajo diario
-git pull origin develop          # Traer cambios del compañero
-git add <archivos-específicos>
+# Ciclo diario
+git pull origin develop              # integrar trabajo de Sebastian
+git add <mis-archivos>
 git commit -m "feat(...): descripción"
 git push origin juan
 
-# 4. Cuando termines una fase, mergear a develop
+# Al terminar una fase → merge a develop
 git checkout develop
 git pull origin develop
-git merge --no-ff juan -m "merge: juan → develop (Sprint 3: Tickets y QR)"
+git merge --no-ff juan -m "merge(juan → develop): Sprint 3 — Tickets y QR"
 git push origin develop
-git checkout juan                 # Volver a tu rama
+git checkout juan
 ```
 
 ---
 
-## Cronograma sugerido de merges
+## Cronograma de merges a develop
 
-| Sesión | Sebastian mergea | Juan mergea |
-|--------|-----------------|-------------|
-| 1 | Config + Auth (users app) | — |
-| 2 | Events models + admin | Events views + URLs |
-| 3 | Base templates + CSS | Event templates (list, detail) |
-| 4 | — | Tickets models + checkout |
-| 5 | Dashboard template | Check-in AJAX + API |
-| 6 | Merge final `develop → main` | Merge final `develop → main` |
+```
+Sesión 1 ──► Sebastian: Config + users/ completo
+Sesión 2 ──► Sebastian: events/ modelos + forms + admin
+             Juan:      events/ views.py + urls.py
+Sesión 3 ──► Sebastian: antigravity.css + base.html + home.html + users/ templates
+             Juan:      events/ templates (list, detail, form, manage)
+Sesión 4 ──► Juan:      tickets/ models + migrations + forms
+Sesión 5 ──► Juan:      tickets/ views (checkout, QR, validación, check-in, API, Excel)
+             Juan:      tickets/ templates (5 archivos)
+Sesión 6 ──► Sebastian: dashboard/index.html + Chart.js
+Sesión 7 ──► MERGE FINAL: develop ──► main + tag v1.0.0
+```
 
 ---
 
-## Merge final a main
-
-Cuando ambas ramas estén integradas en `develop`:
+## Merge final — Release v1.0.0
 
 ```bash
-# Cualquiera de los dos (ponerse de acuerdo)
+# Ambos deben tener develop actualizado antes de este paso
 git checkout main
 git pull origin main
-git merge --no-ff develop -m "release: v1.0.0 — Antigravity sistema completo"
-git tag -a v1.0.0 -m "Entrega final · Sistema de Gestión de Eventos"
+git merge --no-ff develop -m "release: v1.0.0 — Antigravity sistema completo de eventos"
+git tag -a v1.0.0 -m "Entrega final del proyecto · Sistema de Gestión de Eventos"
 git push origin main --tags
 ```
 
 ---
 
-## Resumen de archivos por persona
+## Resumen visual
 
-| | Sebastian | Juan |
-|--|-----------|------|
-| **Archivos Python** | 16 | 11 |
-| **Templates HTML** | 7 | 9 |
-| **CSS / Config** | 6 | 0 |
-| **Total** | **29** | **20** |
-| **Complejidad** | Setup + Auth + Modelos + Dashboard | CRUD views + Tickets completo + AJAX + API |
-
-> La diferencia en cantidad de archivos se compensa con la complejidad técnica de Juan: generación de QR, pasarela simulada, check-in AJAX, API JSON y exportación Excel son las partes más complejas del proyecto.
+```
+┌─────────────────────────────────┬─────────────────────────────────┐
+│        SEBASTIAN  [S]           │           JUAN  [J]             │
+├─────────────────────────────────┼─────────────────────────────────┤
+│  manage.py                      │  events/views.py                │
+│  requirements.txt               │  events/urls.py                 │
+│  .env.example / .gitignore      │                                 │
+│  antigravity/settings.py        │  tickets/__init__.py            │
+│  antigravity/urls.py            │  tickets/apps.py                │
+│  antigravity/wsgi.py            │  tickets/models.py              │
+│                                 │  tickets/admin.py               │
+│  users/__init__.py              │  tickets/forms.py               │
+│  users/apps.py                  │  tickets/views.py               │
+│  users/models.py                │  tickets/urls.py                │
+│  users/admin.py                 │  tickets/migrations/            │
+│  users/forms.py                 │                                 │
+│  users/views.py                 │  templates/events/list.html     │
+│  users/urls.py                  │  templates/events/detail.html   │
+│  users/migrations/              │  templates/events/form.html     │
+│                                 │  templates/events/manage.html   │
+│  events/__init__.py             │                                 │
+│  events/apps.py                 │  templates/tickets/             │
+│  events/models.py               │    checkout.html                │
+│  events/admin.py                │    my_tickets.html              │
+│  events/forms.py                │    ticket_detail.html           │
+│  events/migrations/             │    validate.html                │
+│                                 │    checkin.html                 │
+│  static/css/antigravity.css     │                                 │
+│  templates/base.html            │                                 │
+│  templates/home.html            │                                 │
+│  templates/users/login.html     │                                 │
+│  templates/users/register.html  │                                 │
+│  templates/users/profile.html   │                                 │
+│  templates/dashboard/index.html │                                 │
+├─────────────────────────────────┼─────────────────────────────────┤
+│  29 archivos                    │  20 archivos                    │
+│  Config + Auth + Modelos        │  Vistas + Tickets + AJAX + API  │
+│  + CSS + UI Base + Dashboard    │  + Templates events/tickets     │
+└─────────────────────────────────┴─────────────────────────────────┘
+```
