@@ -25,14 +25,14 @@ antigravity/                          [*] raíz del proyecto
 ├── requirements.txt                  [S] dependencias pip
 ├── .env.example                      [S] plantilla de variables de entorno
 ├── .gitignore                        [S] exclusiones de Git
-├── SETUP.md                          [S] guía de instalación
+├── SETUP.md                          [J] guía de instalación del proyecto
 ├── DIVISION_TRABAJO.md               [*] este documento
 │
 ├── antigravity/                      [S] paquete de configuración principal
 │   ├── __init__.py                   [S]
 │   ├── settings.py                   [S] base de datos, apps, media, email, whitenoise
 │   ├── urls.py                       [S] enrutador raíz del proyecto
-│   └── wsgi.py                       [S] interfaz producción
+│   └── wsgi.py                       [J] interfaz WSGI para producción
 │
 ├── users/                            [S] app completa de autenticación
 │   ├── __init__.py                   [S]
@@ -46,12 +46,12 @@ antigravity/                          [*] raíz del proyecto
 │       ├── __init__.py               [S]
 │       └── 0001_initial.py           [S] migración CustomUser
 │
-├── events/                           [S+J] app compartida — datos(S) + vistas(J)
+├── events/                           [S+J] app compartida — modelos(S) + lógica(J)
 │   ├── __init__.py                   [S]
 │   ├── apps.py                       [S] EventsConfig
 │   ├── models.py                     [S] Ubicacion · Evento · PrecioCategoria
-│   ├── admin.py                      [S] inline de categorías en admin
-│   ├── forms.py                      [S] EventoForm · UbicacionForm · PrecioCategoriaFormSet
+│   ├── admin.py                      [J] inline de categorías en admin
+│   ├── forms.py                      [J] EventoForm · UbicacionForm · PrecioCategoriaFormSet
 │   ├── views.py                      [J] HomeView · EventListView · EventDetailView · CRUD
 │   ├── urls.py                       [J] rutas /events/ con namespace
 │   └── migrations/
@@ -75,7 +75,7 @@ antigravity/                          [*] raíz del proyecto
 │
 ├── templates/
 │   ├── base.html                     [S] navbar · messages · footer · glassmorphism base
-│   ├── home.html                     [S] landing page con hero y eventos destacados
+│   ├── home.html                     [J] landing page con hero y eventos destacados
 │   │
 │   ├── users/                        [S] todas las vistas de autenticación
 │   │   ├── login.html                [S] formulario glass con manejo de errores
@@ -114,9 +114,9 @@ antigravity/                          [*] raíz del proyecto
 |--------|----------|
 | **Configuración** | Inicializa Django, environ, whitenoise, base de datos |
 | **`users/`** | CustomUser con 3 roles, login, register, perfil, admin |
-| **`events/` (datos)** | Modelos Ubicacion, Evento, PrecioCategoria + forms + admin |
+| **`events/` (modelos)** | Modelos Ubicacion, Evento, PrecioCategoria + migraciones |
 | **CSS global** | Sistema glassmorphism completo en `antigravity.css` |
-| **Templates base** | `base.html`, `home.html`, `users/` (3 templates) |
+| **Templates base** | `base.html` + `users/` (login, register, profile) |
 | **Dashboard** | `dashboard/index.html` con Chart.js + API calls |
 
 ### Commits mínimos esperados
@@ -127,10 +127,10 @@ git commit -m "feat(users): CustomUser con roles Organizador, Asistente y Operad
 git commit -m "feat(users): vistas login, logout, register y perfil con cambio de contraseña"
 git commit -m "feat(users): formularios de autenticación y actualización de perfil"
 git commit -m "feat(events): modelos Ubicacion, Evento y PrecioCategoria con ForeignKey"
-git commit -m "feat(events): admin con inline de categorías y formularios validados"
+git commit -m "feat(events): migraciones de los 3 modelos relacionados"
 git commit -m "feat(frontend): sistema de diseño glassmorphism completo en antigravity.css"
 git commit -m "feat(frontend): base.html con navbar por rol, messages y footer"
-git commit -m "feat(frontend): home.html landing page y templates de autenticación"
+git commit -m "feat(frontend): templates de autenticación — login, register y profile"
 git commit -m "feat(dashboard): index.html con Chart.js — gráfica barras y línea + KPIs"
 ```
 
@@ -166,11 +166,13 @@ git checkout sebastian
 ### Módulos a cargo
 | Módulo | Qué hace |
 |--------|----------|
-| **`events/views.py`** | Todas las vistas: lista pública, detalle, CRUD organizador |
-| **`events/urls.py`** | Enrutamiento de eventos con namespace |
+| **`antigravity/wsgi.py`** | Interfaz WSGI para despliegue en producción |
+| **`SETUP.md`** | Guía de instalación y configuración del proyecto |
+| **`events/` (lógica)** | admin, forms, views, urls — todo lo que usa los modelos |
 | **`tickets/`** | App completa: Entrada, checkout, QR, validación, check-in AJAX |
 | **API JSON** | Endpoints de ventas por categoría y asistencia por día |
 | **Exportación** | Excel con pandas/openpyxl |
+| **`home.html`** | Landing page con hero y eventos destacados |
 | **Templates events** | `list`, `detail`, `form`, `manage` — 4 templates |
 | **Templates tickets** | `checkout`, `my_tickets`, `detail`, `validate`, `checkin` — 5 templates |
 
@@ -252,42 +254,46 @@ git push origin main --tags
 ## Resumen visual
 
 ```
-┌─────────────────────────────────┬─────────────────────────────────┐
-│        SEBASTIAN  [S]           │           JUAN  [J]             │
-├─────────────────────────────────┼─────────────────────────────────┤
-│  manage.py                      │  events/views.py                │
-│  requirements.txt               │  events/urls.py                 │
-│  .env.example / .gitignore      │                                 │
-│  antigravity/settings.py        │  tickets/__init__.py            │
-│  antigravity/urls.py            │  tickets/apps.py                │
-│  antigravity/wsgi.py            │  tickets/models.py              │
-│                                 │  tickets/admin.py               │
-│  users/__init__.py              │  tickets/forms.py               │
-│  users/apps.py                  │  tickets/views.py               │
-│  users/models.py                │  tickets/urls.py                │
-│  users/admin.py                 │  tickets/migrations/            │
-│  users/forms.py                 │                                 │
-│  users/views.py                 │  templates/events/list.html     │
-│  users/urls.py                  │  templates/events/detail.html   │
-│  users/migrations/              │  templates/events/form.html     │
-│                                 │  templates/events/manage.html   │
-│  events/__init__.py             │                                 │
-│  events/apps.py                 │  templates/tickets/             │
-│  events/models.py               │    checkout.html                │
-│  events/admin.py                │    my_tickets.html              │
-│  events/forms.py                │    ticket_detail.html           │
-│  events/migrations/             │    validate.html                │
-│                                 │    checkin.html                 │
-│  static/css/antigravity.css     │                                 │
-│  templates/base.html            │                                 │
-│  templates/home.html            │                                 │
-│  templates/users/login.html     │                                 │
-│  templates/users/register.html  │                                 │
-│  templates/users/profile.html   │                                 │
-│  templates/dashboard/index.html │                                 │
-├─────────────────────────────────┼─────────────────────────────────┤
-│  29 archivos                    │  20 archivos                    │
-│  Config + Auth + Modelos        │  Vistas + Tickets + AJAX + API  │
-│  + CSS + UI Base + Dashboard    │  + Templates events/tickets     │
-└─────────────────────────────────┴─────────────────────────────────┘
+┌──────────────────────────────────┬──────────────────────────────────┐
+│        SEBASTIAN  [S]  · 25      │         JUAN  [J]  · 24          │
+├──────────────────────────────────┼──────────────────────────────────┤
+│                                  │                                  │
+│  ── Configuración ──             │  ── Configuración ──             │
+│  manage.py                       │  antigravity/wsgi.py             │
+│  requirements.txt                │  SETUP.md                        │
+│  .env.example                    │                                  │
+│  .gitignore                      │  ── App events/ (lógica) ──      │
+│  antigravity/__init__.py         │  events/admin.py                 │
+│  antigravity/settings.py         │  events/forms.py                 │
+│  antigravity/urls.py             │  events/views.py                 │
+│                                  │  events/urls.py                  │
+│  ── App users/ (completa) ──     │                                  │
+│  users/__init__.py               │  ── App tickets/ (completa) ──   │
+│  users/apps.py                   │  tickets/__init__.py             │
+│  users/models.py                 │  tickets/apps.py                 │
+│  users/admin.py                  │  tickets/models.py               │
+│  users/forms.py                  │  tickets/admin.py                │
+│  users/views.py                  │  tickets/forms.py                │
+│  users/urls.py                   │  tickets/views.py                │
+│  users/migrations/               │  tickets/urls.py                 │
+│                                  │  tickets/migrations/             │
+│  ── App events/ (datos) ──       │                                  │
+│  events/__init__.py              │  ── Templates ──                 │
+│  events/apps.py                  │  templates/home.html             │
+│  events/models.py                │  templates/events/list.html      │
+│  events/migrations/              │  templates/events/detail.html    │
+│                                  │  templates/events/form.html      │
+│  ── Frontend ──                  │  templates/events/manage.html    │
+│  static/css/antigravity.css      │  templates/tickets/checkout.html │
+│  templates/base.html             │  templates/tickets/my_tickets    │
+│  templates/users/login.html      │  templates/tickets/ticket_detail │
+│  templates/users/register.html   │  templates/tickets/validate.html │
+│  templates/users/profile.html    │  templates/tickets/checkin.html  │
+│  templates/dashboard/index.html  │                                  │
+│                                  │                                  │
+├──────────────────────────────────┼──────────────────────────────────┤
+│  25 archivos                     │  24 archivos                     │
+│  Config · Auth · Modelos events  │  Lógica events · Tickets 100%   │
+│  CSS glassmorphism · Dashboard   │  AJAX · API · Excel · Templates  │
+└──────────────────────────────────┴──────────────────────────────────┘
 ```
