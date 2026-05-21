@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard · Organizador{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;" class="dashboard-layout">
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <p class="text-muted-ag" style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:1rem; padding:0 14px;">
+      Dashboard
+    </p>
+    <a href="{% url 'tickets:dashboard' %}" class="sidebar-link active">📊 Estadísticas</a>
+    <a href="{% url 'events:manage' %}" class="sidebar-link">📋 Mis Eventos</a>
+    <a href="{% url 'events:create' %}" class="sidebar-link">➕ Crear Evento</a>
+
+    <hr class="divider" style="margin:1rem 0;">
+    <p class="text-muted-ag" style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:1rem; padding:0 14px;">
+      Eventos
+    </p>
+    {% for evento in eventos %}
+      <button onclick="loadEventData({{ evento.pk }}, '{{ evento.titulo|escapejs }}')"
+              class="sidebar-link" id="evt-btn-{{ evento.pk }}"
+              style="background:none; border:none; width:100%; text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        ✦ {{ evento.titulo|truncatechars:28 }}
+      </button>
+    {% endfor %}
+  </aside>
+
+  <!-- ── Main Content ───────────────────────────────────────────────── -->
+  <main style="flex:1; padding:2.5rem; overflow:auto;">
+
+    <div style="margin-bottom:2.5rem;">
+      <h1 class="font-display" style="margin-bottom:0.25rem;">Panel de Control</h1>
+      <p class="text-muted-ag">Bienvenido, {{ user.get_full_name|default:user.username }}</p>
+    </div>
+
+    <!-- KPIs Globales -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1.25rem; margin-bottom:2.5rem;">
+      <div class="stat-card">
+        <p class="stat-label" style="margin-bottom:0.5rem;">Total Eventos</p>
+        <p class="stat-value">{{ eventos|length }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label" style="margin-bottom:0.5rem;">Entradas Vendidas</p>
+        <p class="stat-value text-accent">{{ total_vendidas }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label" style="margin-bottom:0.5rem;">Ingresos Totales (COP)</p>
+        <p class="stat-value text-gold" style="font-size:1.5rem;">
+          ${{ total_ingresos|floatformat:0 }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Selector de evento activo -->
+    <div class="glass" style="padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <span class="text-muted-ag" style="font-size:0.875rem; font-weight:600;">Analizando:</span>
+      <span id="current-event-name" style="font-weight:700; color:var(--accent);">— Selecciona un evento en el menú lateral —</span>
+      <span id="export-btn-container" style="margin-left:auto; display:none;">
+        <a id="export-link" href="#" class="btn-ghost" style="padding:7px 16px; font-size:0.8rem;">
+          📥 Exportar Excel
+        </a>
+      </span>
+    </div>
+
+    <!-- Gráficos -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+
+      <!-- Ventas por categoría -->
+      <div class="glass" style="padding:1.5rem;">
+        <h3 class="font-display" style="font-size:0.95rem; margin-bottom:1.25rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+          Ventas por Categoría
+        </h3>
+        <div id="no-event-msg-bar" style="height:220px; display:flex; align-items:center; justify-content:center;">
+          <p class="text-muted-ag" style="font-size:0.875rem;">← Selecciona un evento</p>
+        </div>
+        <canvas id="barChart" style="display:none; max-height:220px;"></canvas>
+      </div>
+
+      <!-- Asistencia por día -->
+      <div class="glass" style="padding:1.5rem;">
+        <h3 class="font-display" style="font-size:0.95rem; margin-bottom:1.25rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+          Compras por Día
+        </h3>
+        <div id="no-event-msg-line" style="height:220px; display:flex; align-items:center; justify-content:center;">
+          <p class="text-muted-ag" style="font-size:0.875rem;">← Selecciona un evento</p>
+        </div>
+        <canvas id="lineChart" style="display:none; max-height:220px;"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabla de entradas por evento -->
+    <div class="glass" style="padding:1.5rem;">
+      <h3 class="font-display" style="font-size:0.95rem; margin-bottom:1.25rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em;">
+        Resumen de Eventos
+      </h3>
+      {% if eventos %}
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--glass-border);">
+                <th style="text-align:left; padding:0.75rem; font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Evento</th>
+                <th style="text-align:left; padding:0.75rem; font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Estado</th>
+                <th style="text-align:right; padding:0.75rem; font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Vendidas</th>
+                <th style="text-align:right; padding:0.75rem; font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Ingresos</th>
+                <th style="text-align:center; padding:0.75rem; font-weight:600; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for evento in eventos %}
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s;">
+                  <td style="padding:0.85rem 0.75rem; font-weight:500;">{{ evento.titulo }}</td>
+                  <td style="padding:0.85rem 0.75rem;">
+                    <span class="badge-status badge-{{ evento.estado|lower }}">{{ evento.get_estado_display }}</span>
+                  </td>
+                  <td style="padding:0.85rem 0.75rem; text-align:right; color:var(--accent);">{{ evento.entradas_vendidas }}</td>
+                  <td style="padding:0.85rem 0.75rem; text-align:right; color:var(--gold); font-weight:600;">
+                    ${{ evento.ingresos_totales|floatformat:0 }}
+                  </td>
+                  <td style="padding:0.85rem 0.75rem; text-align:center;">
+                    <a href="{% url 'tickets:export_excel' evento.pk %}" class="btn-ghost"
+                       style="padding:5px 12px; font-size:0.75rem;">📥 Excel</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted-ag" style="font-size:0.875rem;">No hay eventos creados aún.</p>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+  let barChart = null;
+  let lineChart = null;
+  let activeEventId = null;
+
+  function destroyChart(chart) {
+    if (chart) chart.destroy();
+    return null;
+  }
+
+  async function loadEventData(eventoId, eventoNombre) {
+    if (activeEventId === eventoId) return;
+    activeEventId = eventoId;
+
+    // Highlight sidebar button
+    document.querySelectorAll('[id^="evt-btn-"]').forEach(b => b.style.background = '');
+    const activeBtn = document.getElementById('evt-btn-' + eventoId);
+    if (activeBtn) activeBtn.style.background = 'rgba(139,92,246,0.12)';
+
+    document.getElementById('current-event-name').textContent = eventoNombre;
+
+    // Show export button
+    const exportContainer = document.getElementById('export-btn-container');
+    document.getElementById('export-link').href = '/tickets/dashboard/exportar/' + eventoId + '/';
+    exportContainer.style.display = 'block';
+
+    // Fetch data in parallel
+    const [ventasRes, asistenciaRes] = await Promise.all([
+      fetch(`/tickets/dashboard/api/ventas/${eventoId}/`),
+      fetch(`/tickets/dashboard/api/asistencia/${eventoId}/`),
+    ]);
+    const ventas = await ventasRes.json();
+    const asistencia = await asistenciaRes.json();
+
+    renderBarChart(ventas);
+    renderLineChart(asistencia);
+  }
+
+  function renderBarChart(data) {
+    document.getElementById('no-event-msg-bar').style.display = 'none';
+    const canvas = document.getElementById('barChart');
+    canvas.style.display = 'block';
+
+    barChart = destroyChart(barChart);
+    barChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: 'Entradas Vendidas',
+            data: data.vendidas,
+            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+            borderColor: '#8b5cf6',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+          {
+            label: 'Disponibles',
+            data: data.disponibles,
+            backgroundColor: 'rgba(148, 163, 184, 0.2)',
+            borderColor: 'rgba(148,163,184,0.4)',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+
+  function renderLineChart(data) {
+    document.getElementById('no-event-msg-line').style.display = 'none';
+    const canvas = document.getElementById('lineChart');
+    canvas.style.display = 'block';
+
+    lineChart = destroyChart(lineChart);
+
+    // Predictive trend: simple linear extrapolation for next 3 days
+    const counts = data.counts;
+    const labels = [...data.labels];
+    const predictedCounts = [...counts, null, null, null];
+    const predictedLabels = [...labels];
+
+    if (counts.length >= 2) {
+      const avg = counts.slice(-3).reduce((a, b) => a + b, 0) / Math.min(counts.length, 3);
+      const lastDate = labels[labels.length - 1] ? new Date(labels[labels.length - 1]) : new Date();
+      for (let i = 1; i <= 3; i++) {
+        const d = new Date(lastDate);
+        d.setDate(d.getDate() + i);
+        predictedLabels.push(d.toISOString().slice(0, 10));
+        predictedCounts.push(null);
+      }
+    }
+
+    lineChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Compras Reales',
+            data: counts,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2,
+            pointBackgroundColor: '#f59e0b',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+</script>
+{% endblock %}
